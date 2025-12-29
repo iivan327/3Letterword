@@ -14,10 +14,7 @@
     overscroll-behavior: none;
   }
 
-  h1 {
-    font-size: 36px;
-    margin-bottom: 20px;
-  }
+  h1 { font-size: 36px; }
 
   .machine {
     display: flex;
@@ -43,7 +40,7 @@
   }
 
   .letters {
-    transition: transform 0.2s ease-out;
+    will-change: transform;
   }
 
   .letter {
@@ -122,8 +119,10 @@ const slots = [
 ];
 
 const index = [0,0,0];
+const offset = [0,0,0];
 const locked = [false,false,false];
 const wheels = [];
+const itemHeight = 120;
 
 slots.forEach((letters, i) => {
   const wheel = document.getElementById("w"+i);
@@ -144,60 +143,56 @@ slots.forEach((letters, i) => {
 
 function attachTouch(i){
   let startY = 0;
+  let startOffset = 0;
 
-  wheels[i].wheel.addEventListener("touchstart", e => {
+  const wheel = wheels[i];
+
+  wheel.wheel.addEventListener("touchstart", e => {
     if (locked[i]) return;
     startY = e.touches[0].clientY;
+    startOffset = offset[i];
   });
 
-  wheels[i].wheel.addEventListener(
-    "touchmove",
-    e => {
-      if (!locked[i]) e.preventDefault();
-    },
-    { passive: false }
-  );
-
-  wheels[i].wheel.addEventListener("touchend", e => {
+  wheel.wheel.addEventListener("touchmove", e => {
     if (locked[i]) return;
-    const dy = e.changedTouches[0].clientY - startY;
-    if (dy > 30) index[i] = (index[i] + 1) % slots[i].length;
-    if (dy < -30) index[i] = (index[i] - 1 + slots[i].length) % slots[i].length;
-    update();
+    e.preventDefault();
+    const dy = e.touches[0].clientY - startY;
+    offset[i] = startOffset + dy;
+    wheel.list.style.transform = `translateY(${offset[i]}px)`;
+  }, { passive:false });
+
+  wheel.wheel.addEventListener("touchend", () => {
+    if (locked[i]) return;
+    index[i] = Math.round(-offset[i] / itemHeight);
+    index[i] = Math.max(0, Math.min(index[i], slots[i].length - 1));
+    offset[i] = -index[i] * itemHeight;
+    wheel.list.style.transition = "transform 0.15s ease-out";
+    wheel.list.style.transform = `translateY(${offset[i]}px)`;
+    setTimeout(()=>wheel.list.style.transition="",150);
+    updateWord();
   });
 }
 
-function update(){
-  wheels.forEach((w, i) => {
-    w.list.style.transform = `translateY(${-index[i]*120}px)`;
-  });
-
+function updateWord(){
   const word =
     slots[0][index[0]] +
     slots[1][index[1]] +
     slots[2][index[2]];
-
-  document.getElementById("word").textContent =
-    words.includes(word) ? word : "❌";
+  document.getElementById("word").textContent = word;
 }
 
 function randomWord(){
-  const w = words[Math.floor(Math.random()*words.length)];
-  if (!locked[0]) index[0] = slots[0].indexOf(w[0]);
-  if (!locked[1]) index[1] = slots[1].indexOf(w[1]);
-  if (!locked[2]) index[2] = slots[2].indexOf(w[2]);
-  update();
+  const w = words[Math.floor(Math.random() * words.length)];
+  [0,1,2].forEach(i => {
+    if (!locked[i]) {
+      index[i] = slots[i].indexOf(w[i]);
+      offset[i] = -index[i] * itemHeight;
+      wheels[i].list.style.transform = `translateY(${offset[i]}px)`;
+    }
+  });
+  updateWord();
 }
 
 function toggleLock(i){
   locked[i] = !locked[i];
-  const btns = document.querySelectorAll(".lock");
-  btns[i].textContent = locked[i] ? "🔒" : "🔓";
-  wheels[i].wheel.classList.toggle("locked", locked[i]);
-}
-
-randomWord();
-</script>
-
-</body>
-</html>
+  document.querySelectorAll(".lock")
