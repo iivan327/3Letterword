@@ -1,54 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CVC Word Slot (Kids)</title>
+<title>CVC Slider</title>
 
 <style>
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont;
+    font-family: system-ui;
     background: #fff8e7;
     text-align: center;
     padding: 20px;
   }
 
-  h1 {
-    font-size: 36px;
-    margin-bottom: 20px;
-  }
+  h1 { font-size: 36px; }
 
-  .slot-machine {
+  .machine {
     display: flex;
     justify-content: center;
     gap: 20px;
-    margin-bottom: 25px;
+    margin: 30px 0;
   }
 
-  select {
-    font-size: 48px;
-    padding: 10px;
-    height: 90px;
+  .wheel {
+    width: 80px;
+    height: 120px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    touch-action: pan-y;
+  }
+
+  .letters {
+    transition: transform 0.2s ease-out;
+  }
+
+  .letter {
+    height: 120px;
+    font-size: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   button {
     font-size: 28px;
-    padding: 15px 30px;
+    padding: 12px 30px;
     border-radius: 14px;
     border: none;
     background: #ff9f1c;
     color: white;
   }
 
-  button:active {
-    transform: scale(0.97);
-  }
-
   .word {
     font-size: 64px;
+    margin-top: 20px;
     font-weight: bold;
-    margin-top: 25px;
-    color: #2b2b2b;
   }
 </style>
 </head>
@@ -57,70 +65,81 @@
 
 <h1>Word Slot 🎰</h1>
 
-<div class="slot-machine">
-  <select id="c1"></select>
-  <select id="v"></select>
-  <select id="c2"></select>
+<div class="machine">
+  <div class="wheel" id="w1"></div>
+  <div class="wheel" id="w2"></div>
+  <div class="wheel" id="w3"></div>
 </div>
 
 <button onclick="randomWord()">🎲 Random</button>
 
-<div class="word" id="wordDisplay"></div>
+<div class="word" id="word"></div>
 
 <script>
-  // 真實 CVC 單字清單（可自行擴充）
-  const words = [
-    "cat","bat","hat","rat","mat",
-    "dog","log","fog","pig",
-    "pen","hen","ten","bed","red",
-    "cup","sun","run","bug","hug",
-    "map","tap","cap","lip","sit",
-    "box","fox","jam","jet","van"
-  ];
+const words = [
+  "cat","bat","hat","rat","mat",
+  "dog","log","fog","pig",
+  "pen","hen","ten","bed","red",
+  "cup","sun","run","bug","hug",
+  "map","tap","cap","lip","sit",
+  "box","fox","jam","jet","van"
+];
 
-  const c1 = document.getElementById("c1");
-  const v = document.getElementById("v");
-  const c2 = document.getElementById("c2");
-  const display = document.getElementById("wordDisplay");
+const slots = [
+  [...new Set(words.map(w=>w[0]))],
+  [...new Set(words.map(w=>w[1]))],
+  [...new Set(words.map(w=>w[2]))]
+];
 
-  // 從單字清單抽可用字母
-  const consonants1 = [...new Set(words.map(w => w[0]))].sort();
-  const vowels = [...new Set(words.map(w => w[1]))].sort();
-  const consonants2 = [...new Set(words.map(w => w[2]))].sort();
+const wheels = [];
+const index = [0,0,0];
 
-  function fill(select, list) {
-    list.forEach(l => {
-      const opt = document.createElement("option");
-      opt.value = l;
-      opt.textContent = l;
-      select.appendChild(opt);
-    });
-  }
+slots.forEach((letters, i) => {
+  const wheel = document.getElementById("w"+(i+1));
+  const list = document.createElement("div");
+  list.className = "letters";
+  letters.forEach(l=>{
+    const d=document.createElement("div");
+    d.className="letter";
+    d.textContent=l;
+    list.appendChild(d);
+  });
+  wheel.appendChild(list);
+  wheels.push({wheel,list,letters});
+  attachTouch(i);
+});
 
-  fill(c1, consonants1);
-  fill(v, vowels);
-  fill(c2, consonants2);
+function attachTouch(i){
+  let startY=0;
+  wheels[i].wheel.addEventListener("touchstart",e=>{
+    startY=e.touches[0].clientY;
+  });
+  wheels[i].wheel.addEventListener("touchend",e=>{
+    const dy=e.changedTouches[0].clientY-startY;
+    if(dy>30) index[i]=(index[i]+1)%slots[i].length;
+    if(dy<-30) index[i]=(index[i]-1+slots[i].length)%slots[i].length;
+    update();
+  });
+}
 
-  function updateWord() {
-    const word = c1.value + v.value + c2.value;
-    if (words.includes(word)) {
-      display.textContent = word;
-    } else {
-      display.textContent = "❌";
-    }
-  }
+function update(){
+  wheels.forEach((w,i)=>{
+    w.list.style.transform=`translateY(${-index[i]*120}px)`;
+  });
+  const word = slots[0][index[0]]+slots[1][index[1]]+slots[2][index[2]];
+  document.getElementById("word").textContent =
+    words.includes(word) ? word : "❌";
+}
 
-  function randomWord() {
-    const w = words[Math.floor(Math.random() * words.length)];
-    c1.value = w[0];
-    v.value = w[1];
-    c2.value = w[2];
-    display.textContent = w;
-  }
+function randomWord(){
+  const w=words[Math.floor(Math.random()*words.length)];
+  index[0]=slots[0].indexOf(w[0]);
+  index[1]=slots[1].indexOf(w[1]);
+  index[2]=slots[2].indexOf(w[2]);
+  update();
+}
 
-  c1.onchange = v.onchange = c2.onchange = updateWord;
-
-  randomWord();
+randomWord();
 </script>
 
 </body>
