@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CVC Slider</title>
+<title>CVC Word Slot (Kids)</title>
 
 <style>
   body {
@@ -11,136 +11,31 @@
     background: #fff8e7;
     text-align: center;
     padding: 20px;
+    overscroll-behavior: none;
   }
 
-  h1 { font-size: 36px; }
+  h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+  }
 
   .machine {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 24px;
     margin: 30px 0;
   }
 
+  .column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .wheel {
-    width: 80px;
+    width: 90px;
     height: 120px;
     overflow: hidden;
     border-radius: 16px;
     background: white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    touch-action: pan-y;
-  }
-
-  .letters {
-    transition: transform 0.2s ease-out;
-  }
-
-  .letter {
-    height: 120px;
-    font-size: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  button {
-    font-size: 28px;
-    padding: 12px 30px;
-    border-radius: 14px;
-    border: none;
-    background: #ff9f1c;
-    color: white;
-  }
-
-  .word {
-    font-size: 64px;
-    margin-top: 20px;
-    font-weight: bold;
-  }
-</style>
-</head>
-
-<body>
-
-<h1>Word Slot 🎰</h1>
-
-<div class="machine">
-  <div class="wheel" id="w1"></div>
-  <div class="wheel" id="w2"></div>
-  <div class="wheel" id="w3"></div>
-</div>
-
-<button onclick="randomWord()">🎲 Random</button>
-
-<div class="word" id="word"></div>
-
-<script>
-const words = [
-  "cat","bat","hat","rat","mat",
-  "dog","log","fog","pig",
-  "pen","hen","ten","bed","red",
-  "cup","sun","run","bug","hug",
-  "map","tap","cap","lip","sit",
-  "box","fox","jam","jet","van"
-];
-
-const slots = [
-  [...new Set(words.map(w=>w[0]))],
-  [...new Set(words.map(w=>w[1]))],
-  [...new Set(words.map(w=>w[2]))]
-];
-
-const wheels = [];
-const index = [0,0,0];
-
-slots.forEach((letters, i) => {
-  const wheel = document.getElementById("w"+(i+1));
-  const list = document.createElement("div");
-  list.className = "letters";
-  letters.forEach(l=>{
-    const d=document.createElement("div");
-    d.className="letter";
-    d.textContent=l;
-    list.appendChild(d);
-  });
-  wheel.appendChild(list);
-  wheels.push({wheel,list,letters});
-  attachTouch(i);
-});
-
-function attachTouch(i){
-  let startY=0;
-  wheels[i].wheel.addEventListener("touchstart",e=>{
-    startY=e.touches[0].clientY;
-  });
-  wheels[i].wheel.addEventListener("touchend",e=>{
-    const dy=e.changedTouches[0].clientY-startY;
-    if(dy>30) index[i]=(index[i]+1)%slots[i].length;
-    if(dy<-30) index[i]=(index[i]-1+slots[i].length)%slots[i].length;
-    update();
-  });
-}
-
-function update(){
-  wheels.forEach((w,i)=>{
-    w.list.style.transform=`translateY(${-index[i]*120}px)`;
-  });
-  const word = slots[0][index[0]]+slots[1][index[1]]+slots[2][index[2]];
-  document.getElementById("word").textContent =
-    words.includes(word) ? word : "❌";
-}
-
-function randomWord(){
-  const w=words[Math.floor(Math.random()*words.length)];
-  index[0]=slots[0].indexOf(w[0]);
-  index[1]=slots[1].indexOf(w[1]);
-  index[2]=slots[2].indexOf(w[2]);
-  update();
-}
-
-randomWord();
-</script>
-
-</body>
-</html>
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1
