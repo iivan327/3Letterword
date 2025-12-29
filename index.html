@@ -38,4 +38,166 @@
     overflow: hidden;
     border-radius: 16px;
     background: white;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    touch-action: none;
+  }
+
+  .letters {
+    transition: transform 0.2s ease-out;
+  }
+
+  .letter {
+    height: 120px;
+    font-size: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lock {
+    margin-top: 10px;
+    font-size: 26px;
+    border: none;
+    background: transparent;
+  }
+
+  .locked {
+    opacity: 0.4;
+  }
+
+  button.main {
+    font-size: 28px;
+    padding: 14px 32px;
+    border-radius: 16px;
+    border: none;
+    background: #ff9f1c;
+    color: white;
+  }
+
+  .word {
+    font-size: 64px;
+    margin-top: 25px;
+    font-weight: bold;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>Word Slot 🎰</h1>
+
+<div class="machine">
+  <div class="column">
+    <div class="wheel" id="w0"></div>
+    <button class="lock" onclick="toggleLock(0)">🔓</button>
+  </div>
+  <div class="column">
+    <div class="wheel" id="w1"></div>
+    <button class="lock" onclick="toggleLock(1)">🔓</button>
+  </div>
+  <div class="column">
+    <div class="wheel" id="w2"></div>
+    <button class="lock" onclick="toggleLock(2)">🔓</button>
+  </div>
+</div>
+
+<button class="main" onclick="randomWord()">🎲 Random</button>
+
+<div class="word" id="word"></div>
+
+<script>
+const words = [
+  "cat","bat","hat","rat","mat",
+  "dog","log","fog","pig",
+  "pen","hen","ten","bed","red",
+  "cup","sun","run","bug","hug",
+  "map","tap","cap","lip","sit",
+  "box","fox","jam","jet","van"
+];
+
+const slots = [
+  [...new Set(words.map(w => w[0]))],
+  [...new Set(words.map(w => w[1]))],
+  [...new Set(words.map(w => w[2]))]
+];
+
+const index = [0,0,0];
+const locked = [false,false,false];
+const wheels = [];
+
+slots.forEach((letters, i) => {
+  const wheel = document.getElementById("w"+i);
+  const list = document.createElement("div");
+  list.className = "letters";
+
+  letters.forEach(l => {
+    const d = document.createElement("div");
+    d.className = "letter";
+    d.textContent = l;
+    list.appendChild(d);
+  });
+
+  wheel.appendChild(list);
+  wheels.push({wheel, list, letters});
+  attachTouch(i);
+});
+
+function attachTouch(i){
+  let startY = 0;
+
+  wheels[i].wheel.addEventListener("touchstart", e => {
+    if (locked[i]) return;
+    startY = e.touches[0].clientY;
+  });
+
+  wheels[i].wheel.addEventListener(
+    "touchmove",
+    e => {
+      if (!locked[i]) e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  wheels[i].wheel.addEventListener("touchend", e => {
+    if (locked[i]) return;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (dy > 30) index[i] = (index[i] + 1) % slots[i].length;
+    if (dy < -30) index[i] = (index[i] - 1 + slots[i].length) % slots[i].length;
+    update();
+  });
+}
+
+function update(){
+  wheels.forEach((w, i) => {
+    w.list.style.transform = `translateY(${-index[i]*120}px)`;
+  });
+
+  const word =
+    slots[0][index[0]] +
+    slots[1][index[1]] +
+    slots[2][index[2]];
+
+  document.getElementById("word").textContent =
+    words.includes(word) ? word : "❌";
+}
+
+function randomWord(){
+  const w = words[Math.floor(Math.random()*words.length)];
+  if (!locked[0]) index[0] = slots[0].indexOf(w[0]);
+  if (!locked[1]) index[1] = slots[1].indexOf(w[1]);
+  if (!locked[2]) index[2] = slots[2].indexOf(w[2]);
+  update();
+}
+
+function toggleLock(i){
+  locked[i] = !locked[i];
+  const btns = document.querySelectorAll(".lock");
+  btns[i].textContent = locked[i] ? "🔒" : "🔓";
+  wheels[i].wheel.classList.toggle("locked", locked[i]);
+}
+
+randomWord();
+</script>
+
+</body>
+</html>
